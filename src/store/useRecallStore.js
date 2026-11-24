@@ -117,7 +117,7 @@ export const useRecallStore = create((set, get) => ({
 
   // User Profile & Gamified Stats
   userStats: {
-    name: 'Student Learner',
+    name: 'Yaswanth',
     streakDays: 14,
     totalMinutesLearned: 385,
     todayMinutes: 45,

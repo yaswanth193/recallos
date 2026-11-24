@@ -21,10 +21,10 @@ export default {
           900: '#14532d',
         },
         cyber: {
-          bg: '#0B0F19',
-          card: '#111827',
-          cardHover: '#1a2234',
-          border: '#1F2937',
+          bg: '#080C15',
+          card: '#0F1626',
+          cardHover: '#162035',
+          border: 'rgba(255, 255, 255, 0.08)',
           accent: '#6366F1',
           cyan: '#06B6D4',
           emerald: '#10B981',
@@ -34,8 +34,16 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Fira Code', 'Consolas', 'monospace'],
+      },
+      letterSpacing: {
+        tighter: '-0.04em',
+        tight: '-0.02em',
+        normal: '0',
+        wide: '0.02em',
+        wider: '0.05em',
+        widest: '0.1em',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

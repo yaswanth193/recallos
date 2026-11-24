@@ -83,6 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Open RecallOS Web App
   openAppBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://dvvarsha193.github.io/recallos/' });
+    chrome.tabs.create({ url: 'https://yaswanth193.github.io/recallos/' });
   });
 });
