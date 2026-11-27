@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRecallStore } from '../../store/useRecallStore';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../common/Button';
 import { SearchInput } from '../common/SearchInput';
 import {
@@ -8,6 +9,8 @@ import {
   Code2,
   Flame,
   Database,
+  User,
+  LogIn,
 } from 'lucide-react';
 
 export const Header = () => {
@@ -17,8 +20,11 @@ export const Header = () => {
     setCaptureModalOpen,
     setSyllabusModalOpen,
     setDatabaseModalOpen,
+    setAuthModalOpen,
     userStats,
   } = useRecallStore();
+
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 w-full glass-panel border-b border-slate-800/80 px-4 sm:px-6 py-3.5 backdrop-blur-xl">
@@ -55,7 +61,7 @@ export const Header = () => {
           />
         </div>
 
-        {/* Action Controls & Database Status */}
+        {/* Action Controls, Database & Auth */}
         <div className="flex items-center gap-2.5">
           {/* Supabase Database Button */}
           <button
@@ -64,18 +70,33 @@ export const Header = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-400 transition"
           >
             <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Database: Supabase</span>
+            <span className="hidden sm:inline">Database:</span> Supabase
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           </button>
 
-          {/* Syllabus Topics Covered */}
+          {/* User Auth Profile / Sign In Button */}
           <button
             type="button"
-            onClick={() => setSyllabusModalOpen(true)}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 hover:border-indigo-400 transition"
+            onClick={() => setAuthModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+              isAuthenticated
+                ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600/30'
+                : 'bg-slate-900 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-800'
+            }`}
           >
-            <Code2 className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Syllabus Covered</span>
+            {isAuthenticated ? (
+              <>
+                <User className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="max-w-[100px] truncate">
+                  {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Yaswanth'}
+                </span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sign In</span>
+              </>
+            )}
           </button>
 
           {/* Learning Streak */}

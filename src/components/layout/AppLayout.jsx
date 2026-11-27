@@ -10,6 +10,7 @@ import { Sidebar } from './Sidebar';
 import { SyllabusComplianceModal } from '../syllabus/SyllabusComplianceModal';
 import { ResourceCaptureModal } from '../../features/tracker/ResourceCaptureModal';
 import { DatabaseStatusModal } from '../database/DatabaseStatusModal';
+import { AuthModal } from '../../features/auth/AuthModal';
 import { useRecallStore } from '../../store/useRecallStore';
 import {
   LayoutDashboard,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const AppLayout = () => {
-  const { isDatabaseModalOpen, setDatabaseModalOpen } = useRecallStore();
+  const { isDatabaseModalOpen, setDatabaseModalOpen, isAuthModalOpen, setAuthModalOpen } = useRecallStore();
 
   return (
     <div className="min-h-screen flex flex-col bg-[#080C15] text-slate-100">
@@ -124,6 +125,7 @@ export const AppLayout = () => {
       <ResourceCaptureModal />
       <SyllabusComplianceModal />
       <DatabaseStatusModal isOpen={isDatabaseModalOpen} onClose={() => setDatabaseModalOpen(false)} />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 };

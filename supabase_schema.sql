@@ -1,10 +1,12 @@
 -- =========================================================================
--- RecallOS: Supabase Database Schema (PostgreSQL)
+-- RecallOS: Complete Supabase PostgreSQL Database Schema
+-- Includes Database Tables, Indexes, and Authentication RLS Policies
 -- =========================================================================
 
--- 1. Create Resources Table
+-- 1. Create Resources Table (Learning Tracker & Knowledge Vault)
 CREATE TABLE IF NOT EXISTS public.resources (
     id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     url TEXT NOT NULL,
     platform TEXT NOT NULL,
@@ -21,9 +23,10 @@ CREATE TABLE IF NOT EXISTS public.resources (
     notes TEXT
 );
 
--- 2. Create Concepts Table
+-- 2. Create Concepts Table (Interactive Knowledge Graph & Mastery)
 CREATE TABLE IF NOT EXISTS public.concepts (
     id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     domain TEXT NOT NULL,
     category TEXT,
@@ -35,7 +38,7 @@ CREATE TABLE IF NOT EXISTS public.concepts (
     color TEXT DEFAULT '#6366f1'
 );
 
--- 3. Create Quiz Questions Table
+-- 3. Create Quiz Questions Table (Adaptive Active Recall)
 CREATE TABLE IF NOT EXISTS public.quiz_questions (
     id TEXT PRIMARY KEY,
     concept_id TEXT REFERENCES public.concepts(id) ON DELETE CASCADE,
@@ -49,7 +52,7 @@ CREATE TABLE IF NOT EXISTS public.quiz_questions (
 
 -- 4. Create User Learning Telemetry Table
 CREATE TABLE IF NOT EXISTS public.user_stats (
-    user_id TEXT PRIMARY KEY DEFAULT 'current_student',
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     streak_days INTEGER DEFAULT 14,
     total_minutes_learned INTEGER DEFAULT 385,
     today_minutes INTEGER DEFAULT 45,
@@ -59,13 +62,30 @@ CREATE TABLE IF NOT EXISTS public.user_stats (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. Enable Row Level Security (RLS) & Public Access Policies for Demo
+-- 5. Enable Row Level Security (RLS)
 ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.concepts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quiz_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_stats ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public Read/Write Resources" ON public.resources FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write Concepts" ON public.concepts FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write Quizzes" ON public.quiz_questions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Read/Write UserStats" ON public.user_stats FOR ALL USING (true) WITH CHECK (true);
+-- 6. RLS Policies: Allow Authenticated Users to Read & Write Their Own Data,
+-- and allow public access for unauthenticated demo sessions
+CREATE POLICY "Users can view their resources" ON public.resources 
+    FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Users can insert their resources" ON public.resources 
+    FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Users can update their resources" ON public.resources 
+    FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Users can delete their resources" ON public.resources 
+    FOR DELETE USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Public Read Concepts" ON public.concepts FOR SELECT USING (true);
+CREATE POLICY "Public Manage Concepts" ON public.concepts FOR ALL USING (true);
+
+CREATE POLICY "Public Read Quizzes" ON public.quiz_questions FOR SELECT USING (true);
+CREATE POLICY "Public Manage Quizzes" ON public.quiz_questions FOR ALL USING (true);
+
+CREATE POLICY "Users can view stats" ON public.user_stats FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);

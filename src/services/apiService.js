@@ -1,14 +1,11 @@
 /**
- * Unit V: Client Server Communication & RESTful API Service Layer
- * Demonstrates:
- * - REST architectural principles (GET, POST, PUT, DELETE)
- * - Axios usage patterns with request/response interceptors
- * - Fetch API abstraction
- * - Explicit handling of loading, error, and empty states
- * - Server state management integration with React Query
+ * Full-Stack API & Supabase Database Layer for RecallOS
+ * Performs real CRUD operations with Supabase PostgreSQL cloud database,
+ * with resilient offline fallback when offline or during initial configuration.
  */
 
 import axios from 'axios';
+import { supabase } from './supabaseClient';
 import { INITIAL_RESOURCES, INITIAL_CONCEPTS, MOCK_QUIZ_QUESTIONS } from './mockData';
 import { deepCopy } from '../utils/immutableHelpers';
 
@@ -47,39 +44,38 @@ if (!localStorage.getItem(STORAGE_KEYS.QUIZZES)) {
   setStoredData(STORAGE_KEYS.QUIZZES, MOCK_QUIZ_QUESTIONS);
 }
 
-// Axios Mock Client with Interceptor (Unit V)
-export const apiClient = axios.create({
-  baseURL: 'https://api.recallos.local/v1',
-  timeout: 5000,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Client-Syllabus': 'INT252-ReactJS',
-  },
-});
-
-// Interceptor demonstration: logging and headers
-apiClient.interceptors.request.use(
-  (config) => {
-    config.headers['X-Request-Timestamp'] = new Date().toISOString();
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-const delay = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export const apiService = {
-  // GET /api/resources (Demonstrates REST GET & Fetch/Axios pattern)
+  // GET /api/resources (Attempts Supabase, falls back to persistent store)
   async getResources() {
-    await delay(300);
-    const data = getStoredData(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES);
-    return deepCopy(data);
+    try {
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .order('captured_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        // Map Supabase snake_case fields to React camelCase
+        const mapped = data.map((r) => ({
+          ...r,
+          timeSpentMins: r.time_spent_mins || r.timeSpentMins || 30,
+          extractedConcepts: r.extracted_concepts || r.extractedConcepts || [],
+          masteryScore: r.mastery_score || r.masteryScore || 65,
+          reviewDueDate: r.review_due_date || r.reviewDueDate,
+          reviewIntervalDays: r.review_interval_days || r.reviewIntervalDays,
+        }));
+        setStoredData(STORAGE_KEYS.RESOURCES, mapped);
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('Supabase fetch resources fallback:', err.message);
+    }
+
+    const local = getStoredData(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES);
+    return deepCopy(local);
   },
 
-  // POST /api/resources (Demonstrates REST POST)
+  // POST /api/resources (Saves to Supabase & local cache)
   async createResource(newResource) {
-    await delay(400);
-    const resources = getStoredData(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES);
     const item = {
       ...newResource,
       id: `res-${Date.now()}`,
@@ -88,16 +84,46 @@ export const apiService = {
       reviewIntervalDays: 3,
       masteryScore: 65,
       status: 'Reviewing',
-      extractedConcepts: newResource.extractedConcepts || ['New Topic'],
+      extractedConcepts: newResource.extractedConcepts || ['Core Principles'],
     };
+
+    // Attempt saving to Supabase
+    try {
+      await supabase.from('resources').insert([
+        {
+          id: item.id,
+          title: item.title,
+          url: item.url,
+          platform: item.platform,
+          domain: item.domain,
+          tags: item.tags,
+          time_spent_mins: item.timeSpentMins,
+          summary: item.summary,
+          extracted_concepts: item.extractedConcepts,
+          mastery_score: item.masteryScore,
+          status: item.status,
+          notes: item.notes || item.summary,
+        },
+      ]);
+    } catch (err) {
+      console.warn('Supabase insert fallback:', err.message);
+    }
+
+    // Always update local cache for zero-latency UI updates
+    const resources = getStoredData(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES);
     const updated = [item, ...resources];
     setStoredData(STORAGE_KEYS.RESOURCES, updated);
     return deepCopy(item);
   },
 
-  // DELETE /api/resources/:id (Demonstrates REST DELETE idempotency)
+  // DELETE /api/resources/:id
   async deleteResource(id) {
-    await delay(250);
+    try {
+      await supabase.from('resources').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Supabase delete fallback:', err.message);
+    }
+
     const resources = getStoredData(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES);
     const updated = resources.filter((r) => r.id !== id);
     setStoredData(STORAGE_KEYS.RESOURCES, updated);
@@ -106,21 +132,47 @@ export const apiService = {
 
   // GET /api/concepts
   async getConcepts() {
-    await delay(250);
-    const data = getStoredData(STORAGE_KEYS.CONCEPTS, INITIAL_CONCEPTS);
-    return deepCopy(data);
+    try {
+      const { data, error } = await supabase.from('concepts').select('*');
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((c) => ({
+          ...c,
+          masteryScore: c.mastery_score || c.masteryScore,
+          resourceCount: c.resource_count || c.resourceCount,
+          lastTested: c.last_tested || c.lastTested,
+        }));
+        setStoredData(STORAGE_KEYS.CONCEPTS, mapped);
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('Supabase fetch concepts fallback:', err.message);
+    }
+
+    const local = getStoredData(STORAGE_KEYS.CONCEPTS, INITIAL_CONCEPTS);
+    return deepCopy(local);
   },
 
-  // PUT /api/concepts/:id/mastery (Demonstrates REST PUT idempotency)
+  // PUT /api/concepts/:id/mastery
   async updateConceptMastery(conceptId, newMasteryScore) {
-    await delay(200);
+    const validScore = Math.min(100, Math.max(0, newMasteryScore));
+    const today = new Date().toISOString().split('T')[0];
+
+    try {
+      await supabase
+        .from('concepts')
+        .update({ mastery_score: validScore, last_tested: today })
+        .eq('id', conceptId);
+    } catch (err) {
+      console.warn('Supabase update mastery fallback:', err.message);
+    }
+
     const concepts = getStoredData(STORAGE_KEYS.CONCEPTS, INITIAL_CONCEPTS);
     const updated = concepts.map((c) =>
       c.id === conceptId
         ? {
             ...c,
-            masteryScore: Math.min(100, Math.max(0, newMasteryScore)),
-            lastTested: new Date().toISOString().split('T')[0],
+            masteryScore: validScore,
+            lastTested: today,
           }
         : c
     );
@@ -130,53 +182,44 @@ export const apiService = {
 
   // GET /api/quizzes
   async getQuizzes() {
-    await delay(300);
-    const data = getStoredData(STORAGE_KEYS.QUIZZES, MOCK_QUIZ_QUESTIONS);
-    return deepCopy(data);
+    try {
+      const { data, error } = await supabase.from('quiz_questions').select('*');
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((q) => ({
+          ...q,
+          conceptId: q.concept_id || q.conceptId,
+          correctAnswerIndex: q.correct_answer_index ?? q.correctAnswerIndex,
+        }));
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('Supabase fetch quizzes fallback:', err.message);
+    }
+
+    const local = getStoredData(STORAGE_KEYS.QUIZZES, MOCK_QUIZ_QUESTIONS);
+    return deepCopy(local);
   },
 
   // POST /api/quizzes/generate
   async generateAdaptiveQuiz(topicFilter = null) {
-    await delay(500);
-    const all = getStoredData(STORAGE_KEYS.QUIZZES, MOCK_QUIZ_QUESTIONS);
+    const all = await this.getQuizzes();
     if (!topicFilter || topicFilter === 'all') {
       return deepCopy(all);
     }
     const filtered = all.filter(
-      (q) => q.conceptId === topicFilter || q.topic.toLowerCase().includes(topicFilter.toLowerCase())
+      (q) =>
+        q.conceptId === topicFilter ||
+        q.topic.toLowerCase().includes(topicFilter.toLowerCase())
     );
     return deepCopy(filtered.length > 0 ? filtered : all);
   },
 
-  // Simulated Axios REST fetcher for Practical 11 demo
-  async testAxiosRequest(endpoint) {
-    await delay(400);
-    if (endpoint === 'error') {
-      throw new Error('HTTP 500: Server Internal Error Simulated via Axios');
-    }
-    return {
-      status: 200,
-      statusText: 'OK',
-      client: 'Axios 1.7+ Instance',
-      headers: { 'content-type': 'application/json' },
-      data: {
-        timestamp: new Date().toISOString(),
-        totalResources: getStoredData(STORAGE_KEYS.RESOURCES, []).length,
-        syncStatus: 'Background Sync Active',
-      },
-    };
-  },
-
   // POST /api/ai/analyze-url
   async analyzeUrl(url) {
-    await delay(800);
-    const hostname = (() => {
-      try {
-        return new URL(url).hostname;
-      } catch {
-        return 'web-resource';
-      }
-    })();
+    let hostname = 'web-source';
+    try {
+      hostname = new URL(url).hostname;
+    } catch {}
 
     let platform = 'Medium';
     let domain = 'Frontend';

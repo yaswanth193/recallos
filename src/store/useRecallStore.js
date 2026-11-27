@@ -34,6 +34,9 @@ export const useRecallStore = create((set, get) => ({
   isDatabaseModalOpen: false,
   setDatabaseModalOpen: (isOpen) => set({ isDatabaseModalOpen: isOpen }),
 
+  isAuthModalOpen: false,
+  setAuthModalOpen: (isOpen) => set({ isAuthModalOpen: isOpen }),
+
   isSyllabusModalOpen: false,
   setSyllabusModalOpen: (isOpen) => set({ isSyllabusModalOpen: isOpen }),
 
