@@ -67,6 +67,12 @@ RecallOS doesn't just mention the syllabus — it contains a **dedicated interac
 
 ---
 
+## 👥 Project Team & Collaborators
+- **Yaswanth** (Lead Developer & System Architect) — GitHub: [@yaswanth193](https://github.com/yaswanth193)
+- **Surendra** (Co-Developer & Collaborator)
+
+---
+
 ## 🎯 Viva Q&A Cheat Sheet (For your presentation to your teacher)
 
 - **Q: Where is immutability and array transformation used? (Unit I)**  

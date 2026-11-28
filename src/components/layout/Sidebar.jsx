@@ -75,13 +75,19 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      {/* Footer Branding */}
-      <div className="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <Brain className="w-3.5 h-3.5 text-indigo-400" />
-          <span>RecallOS v1.0</span>
-        </span>
-        <span className="text-emerald-400 font-mono text-[10px]">React Frontend</span>
+      {/* Footer Branding & Team Credits */}
+      <div className="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Brain className="w-3.5 h-3.5 text-indigo-400" />
+            <span>RecallOS v1.1</span>
+          </span>
+          <span className="text-emerald-400 font-mono text-[10px]">React 19 + Supabase</span>
+        </div>
+        <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800/40">
+          <span className="text-slate-400">Team:</span>
+          <span className="text-indigo-300 font-medium">Yaswanth &amp; Surendra</span>
+        </div>
       </div>
     </aside>
   );
