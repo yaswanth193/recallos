@@ -15,10 +15,25 @@ export const AuthProvider = ({ children }) => {
   const { addNotification } = useNotification();
 
   useEffect(() => {
+    // 0. Check for persisted demo session
+    try {
+      const storedDemo = localStorage.getItem('recallos_demo_auth');
+      if (storedDemo) {
+        const parsed = JSON.parse(storedDemo);
+        setUser(parsed);
+        setSession({ user: parsed, access_token: 'demo-jwt-token' });
+        setIsLoading(false);
+      }
+    } catch (e) {
+      console.warn('Demo auth parse error:', e);
+    }
+
     // 1. Get initial active session from Supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (session) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setIsLoading(false);
     }).catch((err) => {
       console.warn('Supabase auth getSession warning:', err);
@@ -78,9 +93,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 1-Click Demo Sign-in for Viva / Presentation & Testing
+  const signInAsDemo = (profileName = 'Yaswanth', role = 'Lead Developer') => {
+    const isSurendra = profileName.toLowerCase().includes('surendra');
+    const isFaculty = profileName.toLowerCase().includes('faculty') || profileName.toLowerCase().includes('evaluator');
+
+    const demoUser = {
+      id: isSurendra ? 'usr-surendra-02' : isFaculty ? 'usr-faculty-01' : 'usr-yaswanth-01',
+      email: isSurendra
+        ? 'surendra@recallos.dev'
+        : isFaculty
+        ? 'evaluator@lpu.in'
+        : 'yaswanth@recallos.dev',
+      user_metadata: {
+        full_name: profileName,
+        role: role,
+      },
+      aud: 'authenticated',
+      role: 'authenticated',
+    };
+
+    localStorage.setItem('recallos_demo_auth', JSON.stringify(demoUser));
+    setUser(demoUser);
+    setSession({ user: demoUser, access_token: 'demo-jwt-token' });
+    addNotification(`Signed in as ${profileName} (${role})`, 'success');
+    return { success: true, user: demoUser };
+  };
+
   // Sign out
   const signOut = async () => {
     try {
+      localStorage.removeItem('recallos_demo_auth');
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
@@ -98,6 +141,7 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         signUp,
         signIn,
+        signInAsDemo,
         signOut,
         isAuthenticated: !!user,
       }}
