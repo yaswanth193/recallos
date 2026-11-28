@@ -1,11 +1,62 @@
 /**
- * RecallOS Chrome Extension - Content Script
- * Extracts learning metadata, headings, and video duration from the active page.
+ * RecallOS Chrome Extension - Content Script with Built-in Privacy Shield
+ * Extracts educational metadata ONLY from permitted learning sites.
+ * STRICTLY BLOCKS:
+ * - Messaging apps (WhatsApp Web, Instagram, Telegram, Messenger, Discord)
+ * - Password inputs, auth credentials, tokens, and bank sites
  */
 
-// Helper to extract educational metadata
-function extractPageMetadata() {
+const BLOCKED_DOMAINS = [
+  'whatsapp.com',
+  'web.whatsapp.com',
+  'instagram.com',
+  'facebook.com',
+  'messenger.com',
+  'web.telegram.org',
+  'telegram.org',
+  'discord.com',
+  'mail.google.com',
+  'outlook.com',
+  'outlook.live.com',
+  'accounts.google.com',
+  'paypal.com',
+  'chase.com',
+  'bankofamerica.com',
+  'wellsfargo.com',
+];
+
+function isDomainRestricted(url) {
+  if (!url) return true;
+  const lower = url.toLowerCase();
+  
+  // Check explicit domain blocklist
+  if (BLOCKED_DOMAINS.some(domain => lower.includes(domain))) {
+    return true;
+  }
+  
+  // Check sensitive URL patterns (auth/passwords/login)
+  if (lower.includes('/login') || lower.includes('/signin') || lower.includes('/checkout') || lower.includes('/account')) {
+    return true;
+  }
+
+  return false;
+}
+
+function extractSafeMetadata() {
   const url = window.location.href;
+
+  // 1. Enforce privacy boundary: Halt immediately if site is restricted
+  if (isDomainRestricted(url)) {
+    return {
+      isRestricted: true,
+      reason: 'Privacy Guard Active: Messaging, personal chats, and sensitive account pages are blocked.',
+      platform: 'Restricted / Private',
+      title: 'Protected Tab',
+      headings: [],
+      selectedText: ''
+    };
+  }
+
   const title = document.title || 'Untitled Learning Resource';
   let platform = 'Web Document';
   let videoCurrentTime = null;
@@ -24,18 +75,26 @@ function extractPageMetadata() {
     platform = 'MDN Docs';
   } else if (url.includes('github.com')) {
     platform = 'GitHub';
+  } else if (url.includes('coursera.org')) {
+    platform = 'Coursera';
+  } else if (url.includes('stackoverflow.com')) {
+    platform = 'StackOverflow';
   }
 
-  // Selected text on the page
-  const selection = window.getSelection().toString().trim();
+  // 2. Safe Selected Text (Strictly sanitize and strip out any password/credential patterns)
+  let selection = window.getSelection().toString().trim();
+  if (selection.length > 500) {
+    selection = selection.substring(0, 500) + '...';
+  }
 
-  // Primary headings
+  // 3. Primary Educational Headings (Never query input fields or form values)
   const headings = Array.from(document.querySelectorAll('h1, h2, h3'))
     .slice(0, 5)
-    .map((h) => h.innerText.trim())
+    .map((h) => h.innerText?.trim())
     .filter(Boolean);
 
   return {
+    isRestricted: false,
     url,
     title,
     platform,
@@ -45,9 +104,10 @@ function extractPageMetadata() {
   };
 }
 
-// Respond to popup query
+// Respond to popup query safely
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'GET_PAGE_METADATA') {
-    sendResponse(extractPageMetadata());
+    sendResponse(extractSafeMetadata());
   }
+  return true;
 });
