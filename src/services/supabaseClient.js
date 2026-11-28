@@ -8,9 +8,9 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
-// Default Supabase configuration (can be overridden via environment variables or UI)
-const DEFAULT_URL = import.meta.env.VITE_SUPABASE_URL || 'https://recallos-learning-db.supabase.co';
-const DEFAULT_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_key_for_offline_resilience';
+// Default Supabase configuration (preconfigured with live project)
+const DEFAULT_URL = import.meta.env.VITE_SUPABASE_URL || 'https://yqhkhvgmpjrwuotyfauv.supabase.co';
+const DEFAULT_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_NrbmEAlxUFLkHxMgWHSyXQ_UnXQiafU';
 
 // Check if user set custom credentials in browser storage
 const getActiveConfig = () => {
