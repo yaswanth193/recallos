@@ -12,6 +12,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { useRecallStore } from '../../store/useRecallStore';
 import { apiService } from '../../services/apiService';
+import { formatRelativeTime } from '../../utils/immutableHelpers';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotification } from '../../context/NotificationContext';
 import {
@@ -19,6 +20,7 @@ import {
   PlusCircle,
   ExternalLink,
   Clock,
+  Calendar,
   Laptop,
   CheckCircle2,
   Video,
@@ -266,9 +268,13 @@ export const TrackerView = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge platform={item.platform}>{item.platform}</Badge>
                     <Badge variant="primary">{item.domain}</Badge>
+                    <span className="flex items-center gap-1 text-xs text-indigo-300 font-mono bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-500/20">
+                      <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                      {formatRelativeTime(item.captured_at || item.capturedAt)}
+                    </span>
                     <span className="flex items-center gap-1 text-xs text-slate-400 font-mono">
                       <Clock className="w-3.5 h-3.5 text-slate-500" />
-                      {item.timeSpentMins} mins
+                      {item.timeSpentMins}m spent
                     </span>
                   </div>
 

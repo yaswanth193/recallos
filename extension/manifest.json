@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RecallOS Screen & Learning Tracker",
-  "version": "1.2.0",
-  "description": "Auto-captures learning activity from LeetCode, YouTube, MDN, and GitHub directly into your RecallOS Knowledge Vault with built-in Privacy Guard.",
+  "version": "1.3.0",
+  "description": "Universal auto-capture for all educational websites (YouTube, LeetCode, Coursera, GfG, Docs) directly into your RecallOS Knowledge Vault with built-in Privacy Guard.",
   "permissions": [
     "activeTab",
     "tabs",
@@ -12,12 +12,7 @@
   ],
   "host_permissions": [
     "https://*.supabase.co/*",
-    "https://leetcode.com/*",
-    "https://*.youtube.com/*",
-    "https://*.github.com/*",
-    "https://developer.mozilla.org/*",
-    "https://*.medium.com/*",
-    "https://*.geeksforgeeks.org/*"
+    "*://*/*"
   ],
   "action": {
     "default_popup": "popup.html",
