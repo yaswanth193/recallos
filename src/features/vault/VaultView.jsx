@@ -56,10 +56,11 @@ export const VaultView = () => {
   // Unit III: Custom debounce hook for search query
   const debouncedSearch = useDebounce(searchQuery, 250);
 
-  // Unit V: React Query
-  const { data: resources = [], isLoading } = useQuery({
+  // Unit V: React Query with live background polling
+  const { data: resources = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['resources'],
     queryFn: apiService.getResources,
+    refetchInterval: 5000,
   });
 
   const deleteMutation = useMutation({

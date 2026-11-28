@@ -29,6 +29,7 @@ import {
   Zap,
   Camera,
   Download,
+  RefreshCw,
 } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 
@@ -47,10 +48,11 @@ export const TrackerView = () => {
   const [simulatingPlatform, setSimulatingPlatform] = useState(null);
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
 
-  // Unit V: React Query for fetching resources
-  const { data: resources = [], isLoading } = useQuery({
+  // Unit V: React Query for fetching resources with live auto-refresh
+  const { data: resources = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['resources'],
     queryFn: apiService.getResources,
+    refetchInterval: 5000, // Live poll Supabase every 5 seconds so Chrome Extension captures appear automatically!
   });
 
   const simulateExtensionCapture = async (platform) => {
@@ -128,6 +130,18 @@ export const TrackerView = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              refetch();
+              addNotification('Synced with Supabase Cloud!', 'info');
+            }}
+            title="Refresh resources from Supabase cloud database"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-indigo-400 ${isFetching ? 'animate-spin' : ''}`} />
+            <span>Sync Cloud</span>
+          </button>
           <Button
             variant="emerald"
             icon={Camera}

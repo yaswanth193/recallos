@@ -125,7 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.sendMessage(
       { action: 'SAVE_LEARNING_SESSION', payload: sessionPayload },
       (response) => {
-        saveBtn.innerText = '✓ Saved to Knowledge Vault';
+        saveBtn.innerText = response?.cloudSynced
+          ? '✓ Synced to Supabase Cloud!'
+          : '✓ Saved to Knowledge Vault';
+        successBanner.innerText = response?.cloudSynced
+          ? '✓ Synced directly to your live Supabase database!'
+          : '✓ Saved to Knowledge Vault!';
         successBanner.style.display = 'block';
         setTimeout(() => {
           window.close();
