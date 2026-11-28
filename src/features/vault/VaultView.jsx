@@ -60,8 +60,17 @@ export const VaultView = () => {
   const { data: resources = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['resources'],
     queryFn: apiService.getResources,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
   });
+
+  // Listen for real-time Chrome Extension sync events
+  React.useEffect(() => {
+    const handleSync = () => {
+      refetch();
+    };
+    window.addEventListener('recallos-sync-event', handleSync);
+    return () => window.removeEventListener('recallos-sync-event', handleSync);
+  }, [refetch]);
 
   const deleteMutation = useMutation({
     mutationFn: (id) => apiService.deleteResource(id),

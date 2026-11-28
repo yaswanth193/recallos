@@ -104,10 +104,14 @@ function extractSafeMetadata() {
   };
 }
 
-// Respond to popup query safely
+// Respond to popup query safely & relay sync events to website
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'GET_PAGE_METADATA') {
     sendResponse(extractSafeMetadata());
+  } else if (request.action === 'NEW_LEARNING_RESOURCE_SYNCED') {
+    window.postMessage({ type: 'RECALLOS_SYNC_RESOURCES' }, '*');
+    window.dispatchEvent(new CustomEvent('recallos-sync-event'));
+    sendResponse({ received: true });
   }
   return true;
 });

@@ -52,8 +52,18 @@ export const TrackerView = () => {
   const { data: resources = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['resources'],
     queryFn: apiService.getResources,
-    refetchInterval: 5000, // Live poll Supabase every 5 seconds so Chrome Extension captures appear automatically!
+    refetchInterval: 3000, // Live poll Supabase every 3 seconds
   });
+
+  // Listen for real-time Chrome Extension sync events
+  React.useEffect(() => {
+    const handleSync = () => {
+      refetch();
+      addNotification('⚡ Chrome Extension synced new resource to Knowledge Vault!', 'success');
+    };
+    window.addEventListener('recallos-sync-event', handleSync);
+    return () => window.removeEventListener('recallos-sync-event', handleSync);
+  }, [refetch, addNotification]);
 
   const simulateExtensionCapture = async (platform) => {
     setSimulatingPlatform(platform);
